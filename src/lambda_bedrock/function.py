@@ -5,7 +5,11 @@ from dataclasses import dataclass
 import boto3
 import json
 from botocore.exceptions import ClientError
+import logging
 
+# TODO
+# Change Model 
+# Create the CW Dashboard
 
 # Create Bedrock prompt struct for the request to invoke.
 @dataclass
@@ -143,74 +147,74 @@ def fetch_analysis(log_group_arn: str) -> str:
 
 
 def lambda_handler(event: dict, context: dict) -> str:
-   message = 'Hello {} !'.format(event['key1'])
-   return {
-       'message' : message
-   }
-    # if event.get("describe"):
-    #     docs = """## Python Bedrock Analysis
-    #     This is a widget where we will use Bedrock to analyze a CloudWatch Log Group, then return the output summary.
-    #     ### Widget parameters
-    #     Param | Description
-    #     ---|---
-    #     **log_group_arn** | The ARN of the log group to summarize
+#    message = 'Hello {} !'.format(event['key1'])
+#    return {
+#        'message' : message
+#    }
+    if event.get("describe"):
+        docs = """## Python Bedrock Analysis
+        This is a widget where we will use Bedrock to analyze a CloudWatch Log Group, then return the output summary.
+        ### Widget parameters
+        Param | Description
+        ---|---
+        **log_group_arn** | The ARN of the log group to summarize
 
-    #     ### Example Parameters
-    #     ``` yaml
-    #     log_group_arn: arn:aws:logs:$REGION:$ACCOUNTID:log-group:/log/GroupName
-    #     ```
-    #     """
-    #     return docs
+        ### Example Parameters
+        ``` yaml
+        log_group_arn: arn:aws:logs:$REGION:$ACCOUNTID:log-group:/log/GroupName
+        ```
+        """
+        return docs
 
-    # log_group_arn = event["widgetContext"]["params"].get("log_group_arn")
-    # print(f"The log group arn is: {log_group_arn}")
+    log_group_arn = event["widgetContext"]["params"].get("log_group_arn")
+    logging.info(f"The log group arn is: {log_group_arn}")
 
-    # if not log_group_arn:
-    #     return "Missing 'log_group_arn' parameter in the request payload."
+    if not log_group_arn:
+        return "Missing 'log_group_arn' parameter in the request payload."
         
-    # # Encode log group name for use in deep links
-    # encoded_log_group_name = log_group_arn.replace("/", "$252F")
+    # Encode log group name for use in deep links
+    encoded_log_group_name = log_group_arn.replace("/", "$252F")
 
-    # # Create deeplinks
-    # overview_deeplink = f"https://console.aws.amazon.com/cloudwatch/home#logsV2:log-groups/log-group/{encoded_log_group_name}"
-    # insights_deeplink = f"https://console.aws.amazon.com/cloudwatch/home#logsV2:logs-insights$3FqueryDetail$3D~(end~0~start~-3600~timeType~'RELATIVE~unit~'seconds~editorString~'~isLiveTail~false~queryId~'~source~(~'{encoded_log_group_name}))"
-    # tail_deeplink = f"https://console.aws.amazon.com/cloudwatch/home#logsV2:live-tail$3FlogGroupArns$3D~(~'{encoded_log_group_name})"
+    # Create deeplinks
+    overview_deeplink = f"https://console.aws.amazon.com/cloudwatch/home#logsV2:log-groups/log-group/{encoded_log_group_name}"
+    insights_deeplink = f"https://console.aws.amazon.com/cloudwatch/home#logsV2:logs-insights$3FqueryDetail$3D~(end~0~start~-3600~timeType~'RELATIVE~unit~'seconds~editorString~'~isLiveTail~false~queryId~'~source~(~'{encoded_log_group_name}))"
+    tail_deeplink = f"https://console.aws.amazon.com/cloudwatch/home#logsV2:live-tail$3FlogGroupArns$3D~(~'{encoded_log_group_name})"
 
-    # # Get time for cache check
-    # timestamp_now = int(time.time())
+    # Get time for cache check
+    timestamp_now = int(time.time())
 
-    # # Initializing string for insertion into f string html
-    # payload_string = '{"retry":"true"}'
+    # Initializing string for insertion into f string html
+    payload_string = '{"retry":"true"}'
 
-    # cache_item = get_summary_cache(log_group_arn)
-    # if (
-    #     cache_item
-    #     and timestamp_now - cache_item.timestamp < 30 * 60
-    #     and "retry" not in event
-    # ):
-    #     html = f"""
-    #     <h2>Log Group Summary</h2>
-    #     <p>{cache_item.summary}</p>
-    #     <a class="btn btn-primary">Fetch a new Summary</a>
-    #     <cwdb-action action="call" endpoint="{context.invoked_function_arn}">
-    #         {payload_string}
-    #     </cwdb-action>
-    #     <a class="btn btn-primary" href="{overview_deeplink}">Log Group Overview</a>
-    #     <a class="btn btn-primary" href="{insights_deeplink}">View in Logs Insights</a>
-    #     <a class="btn btn-primary" href="{tail_deeplink}">Tail Log</a>
-    #     """
-    #     return html
-    # else:
-    #     analysis = fetch_analysis(log_group_arn)
-    #     html = f"""
-    #     <h2>Log Group Summary</h2>
-    #     <p>{analysis}</p>
-    #     <a class="btn btn-primary">Fetch a new Summary</a>
-    #     <cwdb-action action="call" endpoint="{context.invoked_function_arn}">
-    #         {payload_string}
-    #     </cwdb-action>
-    #     <a class="btn btn-primary" href="{overview_deeplink}">Log Group Overview</a>
-    #     <a class="btn btn-primary" href="{insights_deeplink}">View in Logs Insights</a>
-    #     <a class="btn btn-primary" href="{tail_deeplink}">Tail Log</a>
-    #     """
-    #     return html
+    cache_item = get_summary_cache(log_group_arn)
+    if (
+        cache_item
+        and timestamp_now - cache_item.timestamp < 30 * 60
+        and "retry" not in event
+    ):
+        html = f"""
+        <h2>Log Group Summary</h2>
+        <p>{cache_item.summary}</p>
+        <a class="btn btn-primary">Fetch a new Summary</a>
+        <cwdb-action action="call" endpoint="{context.invoked_function_arn}">
+            {payload_string}
+        </cwdb-action>
+        <a class="btn btn-primary" href="{overview_deeplink}">Log Group Overview</a>
+        <a class="btn btn-primary" href="{insights_deeplink}">View in Logs Insights</a>
+        <a class="btn btn-primary" href="{tail_deeplink}">Tail Log</a>
+        """
+        return html
+    else:
+        analysis = fetch_analysis(log_group_arn)
+        html = f"""
+        <h2>Log Group Summary</h2>
+        <p>{analysis}</p>
+        <a class="btn btn-primary">Fetch a new Summary</a>
+        <cwdb-action action="call" endpoint="{context.invoked_function_arn}">
+            {payload_string}
+        </cwdb-action>
+        <a class="btn btn-primary" href="{overview_deeplink}">Log Group Overview</a>
+        <a class="btn btn-primary" href="{insights_deeplink}">View in Logs Insights</a>
+        <a class="btn btn-primary" href="{tail_deeplink}">Tail Log</a>
+        """
+        return html

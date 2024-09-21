@@ -1,1 +1,0 @@
-{"filename": "builds/f63577ada4116b9a2c9390f93b4a8e1bcb169e7cde13f40187b38c8afbf97378.zip", "runtime": "python3.12", "artifacts_dir": "builds", "build_plan": [["zip", "./src/lambda_bedrock", null]]}

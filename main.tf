@@ -11,4 +11,12 @@ module "bedrock_lambda_function" {
     source_path = "./src/lambda_bedrock"
     region = var.region
     policy_json = data.aws_iam_policy_document.lambda_policy.json
+    cache_name = module.cwl_dynamodb_cache.dynamo_db_arn
 }   
+
+resource "aws_lambda_permission" "allow_cloudwatch" {
+  statement_id  = "AllowExecutionFromCloudWatch"
+  action        = "lambda:InvokeFunction"
+  function_name = module.bedrock_lambda_function.lambda_function_name
+  principal     = "cloudwatch.amazonaws.com"
+}

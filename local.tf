@@ -6,6 +6,7 @@ locals {
 
 data "aws_iam_policy_document" "lambda_policy" {
   statement {
+    effect = "Allow"
     actions = [
         "dynamodb:CreateTable",
         "dynamodb:DeleteTable",
@@ -18,6 +19,7 @@ data "aws_iam_policy_document" "lambda_policy" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
         "bedrock:InvokeAgent",
         "bedrock:GetModel",
@@ -27,10 +29,20 @@ data "aws_iam_policy_document" "lambda_policy" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
         "cloudwatch:GetMetricStatistics",
-        "cloudwatch:ListMetrics"
+        "cloudwatch:ListMetrics",
+        "logs:*"
     ]
     resources = ["*"]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "bedrock:InvokeModel"   
+    ]
+    resources = ["arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0"]
   }
 }

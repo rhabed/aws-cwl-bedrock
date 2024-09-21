@@ -29,3 +29,8 @@ variable policy_json {
     description = "IAM Policy"
     type = string
 }
+
+variable cache_name {
+    description = "Dynamodb ARN"
+    type = string
+}

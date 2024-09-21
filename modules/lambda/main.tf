@@ -2,6 +2,7 @@ terraform {
   required_version = "~> 1.9.0"
 }
 
+
 module "lambda_function" {
   source = "terraform-aws-modules/lambda/aws"
   version = "7.9.0"
@@ -13,5 +14,9 @@ module "lambda_function" {
   source_path = var.source_path
   attach_policy_json = true
   policy_json = var.policy_json
+  environment_variables = {
+    cache_name = var.cache_name
+  }
+  timeout = 180
 }
 
