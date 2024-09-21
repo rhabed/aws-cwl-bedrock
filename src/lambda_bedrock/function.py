@@ -8,8 +8,9 @@ from botocore.exceptions import ClientError
 import logging
 
 # TODO
-# Change Model 
+# Change Model
 # Create the CW Dashboard
+
 
 # Create Bedrock prompt struct for the request to invoke.
 @dataclass
@@ -113,7 +114,7 @@ def recent_log_stream(log_group_arn: str) -> str:
     logs_client = boto3.client("logs")
 
     response = logs_client.describe_log_streams(
-        logGroupIdentifier=log_group_arn, orderBy='LastEventTime'
+        logGroupIdentifier=log_group_arn, orderBy="LastEventTime"
     )
 
     log_streams = response.get("logStreams", [])
@@ -131,7 +132,9 @@ def fetch_analysis(log_group_arn: str) -> str:
     log_stream_name = recent_log_stream(log_group_arn)
 
     response = logs_client.get_log_events(
-        logGroupIdentifier=log_group_arn, logStreamName=log_stream_name, limit=50
+        logGroupIdentifier=log_group_arn,
+        logStreamName=log_stream_name,
+        limit=50,
     )
 
     events = response.get("events", [])
@@ -147,10 +150,6 @@ def fetch_analysis(log_group_arn: str) -> str:
 
 
 def lambda_handler(event: dict, context: dict) -> str:
-#    message = 'Hello {} !'.format(event['key1'])
-#    return {
-#        'message' : message
-#    }
     if event.get("describe"):
         docs = """## Python Bedrock Analysis
         This is a widget where we will use Bedrock to analyze a CloudWatch Log Group, then return the output summary.
@@ -171,7 +170,7 @@ def lambda_handler(event: dict, context: dict) -> str:
 
     if not log_group_arn:
         return "Missing 'log_group_arn' parameter in the request payload."
-        
+
     # Encode log group name for use in deep links
     encoded_log_group_name = log_group_arn.replace("/", "$252F")
 
