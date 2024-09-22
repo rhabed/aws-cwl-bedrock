@@ -6,29 +6,9 @@ import boto3
 import json
 from botocore.exceptions import ClientError
 import logging
+from models.models import AnthropicBedrockBody, AmazonTitantBedrockBody
 
-# TODO
-# Change Model
 # Create the CW Dashboard
-
-
-# Create Bedrock prompt struct for the request to invoke.
-@dataclass
-class BedrockBody:
-    prompt: str
-    max_tokens_to_sample: int
-    temperature: float
-    top_p: float
-    anthropic_version: str = "bedrock-2023-05-31"
-
-    def to_dict(self):
-        return {
-            "messages": [{"role": "user", "content": self.prompt}],
-            "max_tokens": self.max_tokens_to_sample,
-            "temperature": self.temperature,
-            "top_p": self.top_p,
-            "anthropic_version": self.anthropic_version,
-        }
 
 
 # Create a struct to handle the items from the cache.
@@ -81,33 +61,6 @@ def response_format(response_string: str) -> str:
     return content.replace("\n", "<br />")
 
 
-# Call on Bedrock API for summary of data.
-def bedrock_analyze(result_string: str) -> str:
-    body = BedrockBody(
-        prompt=f"Please create some insights on the following log string.{result_string}",
-        max_tokens_to_sample=1000,
-        temperature=0,
-        top_p=1,
-    )
-
-    blob_body = bytes(json.dumps(body.to_dict()), "utf-8")
-
-    bedrock_client = boto3.client("bedrock-runtime")
-
-    bedrock_resp = bedrock_client.invoke_model(
-        modelId="anthropic.claude-3-haiku-20240307-v1:0",
-        body=blob_body,
-        contentType="application/json",
-    )
-
-    response_blob = bedrock_resp["body"].read()
-    response_string = response_blob.decode("utf-8")
-
-    response_string_formatted = response_format(response_string)
-
-    return response_string_formatted
-
-
 # Function to return most recent log stream from log_group. This way we do not have to keep updating the stream to
 # analyze
 def recent_log_stream(log_group_arn: str) -> str:
@@ -120,6 +73,7 @@ def recent_log_stream(log_group_arn: str) -> str:
     log_streams = response.get("logStreams", [])
     if log_streams:
         recent_stream_name = log_streams[0]["logStreamName"]
+        print(recent_stream_name)
         return recent_stream_name
     else:
         raise Exception("No log streams found for the given log group ARN.")
@@ -144,7 +98,15 @@ def fetch_analysis(log_group_arn: str) -> str:
     result_string = "\n".join(
         [f"[{event['timestamp']}] {event['message']}" for event in events]
     )
-    analysis = bedrock_analyze(result_string)
+
+    # TO DO choice od models depending on environment.
+    model_body = AmazonTitantBedrockBody(
+        prompt=result_string,
+        max_tokens_to_sample=1000,
+        temperature=0,
+        top_p=1,
+    )
+    analysis = model_body.bedrock_analyze()
     put_summary(log_group_arn, analysis)
     return analysis
 
@@ -166,8 +128,6 @@ def lambda_handler(event: dict, context: dict) -> str:
         return docs
 
     log_group_arn = event["widgetContext"]["params"].get("log_group_arn")
-    logging.info(f"The log group arn is: {log_group_arn}")
-
     if not log_group_arn:
         return "Missing 'log_group_arn' parameter in the request payload."
 

@@ -43,6 +43,8 @@ data "aws_iam_policy_document" "lambda_policy" {
     actions = [
       "bedrock:InvokeModel"   
     ]
-    resources = ["arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0"]
+    resources = ["arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0", 
+      "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-text-express-v1"
+    ]
   }
 }
