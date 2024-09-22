@@ -6,7 +6,7 @@ import boto3
 import json
 from botocore.exceptions import ClientError
 import logging
-from models.models import AnthropicBedrockBody
+from models.models import AnthropicBedrockBody, AmazonTitantBedrockBody
 
 # Create the CW Dashboard
 
@@ -73,6 +73,7 @@ def recent_log_stream(log_group_arn: str) -> str:
     log_streams = response.get("logStreams", [])
     if log_streams:
         recent_stream_name = log_streams[0]["logStreamName"]
+        print(recent_stream_name)
         return recent_stream_name
     else:
         raise Exception("No log streams found for the given log group ARN.")
@@ -99,7 +100,7 @@ def fetch_analysis(log_group_arn: str) -> str:
     )
 
     # TO DO choice od models depending on environment.
-    model_body = AnthropicBedrockBody(
+    model_body = AmazonTitantBedrockBody(
         prompt=result_string,
         max_tokens_to_sample=1000,
         temperature=0,
@@ -127,8 +128,6 @@ def lambda_handler(event: dict, context: dict) -> str:
         return docs
 
     log_group_arn = event["widgetContext"]["params"].get("log_group_arn")
-    logging.info(f"The log group arn is: {log_group_arn}")
-
     if not log_group_arn:
         return "Missing 'log_group_arn' parameter in the request payload."
 

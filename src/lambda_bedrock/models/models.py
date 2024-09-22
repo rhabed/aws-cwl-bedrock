@@ -2,8 +2,6 @@ from dataclasses import dataclass
 import json
 import boto3
 
-import logging
-
 
 @dataclass
 class AnthropicBedrockBody:
@@ -30,7 +28,6 @@ class AnthropicBedrockBody:
 
     def bedrock_analyze(self) -> str:
         blob_body = bytes(json.dumps(self.to_dict()), "utf-8")
-        logging.debug(blob_body)
         bedrock_client = boto3.client("bedrock-runtime")
 
         bedrock_resp = bedrock_client.invoke_model(
@@ -56,12 +53,36 @@ class AmazonTitantBedrockBody:
     max_tokens_to_sample: int
     temperature: float
     top_p: float
+    modelId = "amazon.titan-text-express-v1"
 
     def to_dict(self):
         return {
-            "messages": [{"role": "user", "content": self.prompt}],
-            "max_tokens": self.max_tokens_to_sample,
-            "temperature": self.temperature,
-            "top_p": self.top_p,
-            "anthropic_version": self.anthropic_version,
+            "inputText": f"Please create some insights on the following log string.{self.prompt}",
+            "textGenerationConfig": {
+                "maxTokenCount": self.max_tokens_to_sample,  # Adjust maxTokenCount as needed
+                "stopSequences": [],
+                "temperature": self.temperature,
+                "topP": self.top_p,
+            },
         }
+
+    def bedrock_analyze(self) -> str:
+        blob_body = bytes(json.dumps(self.to_dict()), "utf-8")
+        bedrock_client = boto3.client("bedrock-runtime")
+
+        bedrock_resp = bedrock_client.invoke_model(
+            modelId=self.modelId,
+            body=blob_body,
+            contentType="application/json",
+        )
+
+        response_blob = bedrock_resp["body"].read()
+        response_string = response_blob.decode("utf-8")
+
+        try:
+            json_response = json.loads(response_string)
+        except json.JSONDecodeError as e:
+            raise e
+
+        content = json_response["results"][0].get("outputText", "")
+        return content.replace("\n", "<br />")
