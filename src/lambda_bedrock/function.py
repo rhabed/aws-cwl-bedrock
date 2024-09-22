@@ -6,29 +6,9 @@ import boto3
 import json
 from botocore.exceptions import ClientError
 import logging
+from models.models import AnthropicBedrockBody
 
-# TODO
-# Change Model
 # Create the CW Dashboard
-
-
-# Create Bedrock prompt struct for the request to invoke.
-@dataclass
-class BedrockBody:
-    prompt: str
-    max_tokens_to_sample: int
-    temperature: float
-    top_p: float
-    anthropic_version: str = "bedrock-2023-05-31"
-
-    def to_dict(self):
-        return {
-            "messages": [{"role": "user", "content": self.prompt}],
-            "max_tokens": self.max_tokens_to_sample,
-            "temperature": self.temperature,
-            "top_p": self.top_p,
-            "anthropic_version": self.anthropic_version,
-        }
 
 
 # Create a struct to handle the items from the cache.
@@ -81,33 +61,6 @@ def response_format(response_string: str) -> str:
     return content.replace("\n", "<br />")
 
 
-# Call on Bedrock API for summary of data.
-def bedrock_analyze(result_string: str) -> str:
-    body = BedrockBody(
-        prompt=f"Please create some insights on the following log string.{result_string}",
-        max_tokens_to_sample=1000,
-        temperature=0,
-        top_p=1,
-    )
-
-    blob_body = bytes(json.dumps(body.to_dict()), "utf-8")
-
-    bedrock_client = boto3.client("bedrock-runtime")
-
-    bedrock_resp = bedrock_client.invoke_model(
-        modelId="anthropic.claude-3-haiku-20240307-v1:0",
-        body=blob_body,
-        contentType="application/json",
-    )
-
-    response_blob = bedrock_resp["body"].read()
-    response_string = response_blob.decode("utf-8")
-
-    response_string_formatted = response_format(response_string)
-
-    return response_string_formatted
-
-
 # Function to return most recent log stream from log_group. This way we do not have to keep updating the stream to
 # analyze
 def recent_log_stream(log_group_arn: str) -> str:
@@ -144,7 +97,15 @@ def fetch_analysis(log_group_arn: str) -> str:
     result_string = "\n".join(
         [f"[{event['timestamp']}] {event['message']}" for event in events]
     )
-    analysis = bedrock_analyze(result_string)
+
+    # TO DO choice od models depending on environment.
+    model_body = AnthropicBedrockBody(
+        prompt=result_string,
+        max_tokens_to_sample=1000,
+        temperature=0,
+        top_p=1,
+    )
+    analysis = model_body.bedrock_analyze()
     put_summary(log_group_arn, analysis)
     return analysis
 
