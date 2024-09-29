@@ -80,7 +80,9 @@ def recent_log_stream(log_group_arn: str) -> str:
 
 
 # Fetch analysis string from bedrock
-def fetch_analysis(log_group_arn: str) -> str:
+def fetch_analysis(
+    log_group_arn: str, model: str = "AmazonTitantBedrock"
+) -> str:
     logs_client = boto3.client("logs")
 
     log_stream_name = recent_log_stream(log_group_arn)
@@ -100,12 +102,22 @@ def fetch_analysis(log_group_arn: str) -> str:
     )
 
     # TO DO choice od models depending on environment.
-    model_body = AmazonTitantBedrockBody(
-        prompt=result_string,
-        max_tokens_to_sample=1000,
-        temperature=0,
-        top_p=1,
-    )
+    if model == "AmazonTitantBedrock":
+        model_body = AmazonTitantBedrockBody(
+            prompt=result_string,
+            max_tokens_to_sample=1000,
+            temperature=0,
+            top_p=1,
+        )
+    elif model == "AnthropicBedrock":
+        model_body = AnthropicBedrockBody(
+            prompt=result_string,
+            max_tokens_to_sample=1000,
+            temperature=0,
+            top_p=1,
+        )
+    else:
+        raise ValueError(f"Model not supported: {model}")
     analysis = model_body.bedrock_analyze()
     put_summary(log_group_arn, analysis)
     return analysis

@@ -34,3 +34,14 @@ variable cache_name {
     description = "Dynamodb ARN"
     type = string
 }
+
+variable model {
+    description = "Model"
+    type = string
+    default = "AmazonTitantBedrock"
+    validation {
+      condition     = can(regex("^(AnthropicBedrock|AmazonTitantBedrock)$", var.model))
+      error_message = "Must be AnthropicBedrock or AmazonTitantBedrock."
+  }
+}
+
