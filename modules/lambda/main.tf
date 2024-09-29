@@ -16,6 +16,7 @@ module "lambda_function" {
   policy_json = var.policy_json
   environment_variables = {
     cache_name = var.cache_name
+    model = var.model
   }
   timeout = 180
 }

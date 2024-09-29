@@ -12,6 +12,7 @@ module "bedrock_lambda_function" {
     region = var.region
     policy_json = data.aws_iam_policy_document.lambda_policy.json
     cache_name = module.cwl_dynamodb_cache.dynamo_db_arn
+    model = "AmazonTitantBedrock"
 }   
 
 resource "aws_lambda_permission" "allow_cloudwatch" {
